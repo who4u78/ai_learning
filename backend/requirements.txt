@@ -11,6 +11,8 @@ httpx==0.26.0
 
 # Audio/Video processing
 ffmpeg-python==0.2.0
+pydub==0.25.1
+pillow==10.2.0
 
 # Web scraping and parsing
 beautifulsoup4==4.12.3

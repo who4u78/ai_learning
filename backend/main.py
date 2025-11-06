@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import routers
-from api import content, audio, video, courses
+from api import content, audio, video, courses, learning
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,8 +32,20 @@ async def lifespan(app: FastAPI):
 # FastAPI 앱 초기화
 app = FastAPI(
     title="한글 AI 학습 플랫폼 API",
-    description="HTML/텍스트를 한글 학습 콘텐츠로 변환하는 AI 플랫폼",
-    version="1.0.0",
+    description="""
+    HTML/텍스트를 완전한 한글 학습 자료로 변환하는 AI 플랫폼
+
+    포함 내용:
+    - 10분 2인 팟캐스트
+    - 20분+ 강의 비디오 (슬라이드 포함)
+    - 10분 읽기 자료
+    - 심화 사고 질문 3개
+    - 4지선다 퀴즈 10문제
+    - 단답형 퀴즈 5문제
+    - 서술형 문제 2개
+    - 실시간 학습 챗봇
+    """,
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -47,7 +59,8 @@ app.add_middleware(
 )
 
 # 라우터 등록
-app.include_router(content.router, prefix="/api/content", tags=["content"])
+app.include_router(learning.router, prefix="/api/learning", tags=["learning"])  # 새로운 통합 API
+app.include_router(content.router, prefix="/api/content", tags=["content"])  # 하위 호환성
 app.include_router(audio.router, prefix="/api/audio", tags=["audio"])
 app.include_router(video.router, prefix="/api/video", tags=["video"])
 app.include_router(courses.router, prefix="/api/courses", tags=["courses"])
@@ -56,8 +69,16 @@ app.include_router(courses.router, prefix="/api/courses", tags=["courses"])
 async def root():
     """루트 엔드포인트"""
     return {
-        "message": "한글 AI 학습 플랫폼 API",
-        "version": "1.0.0",
+        "message": "한글 AI 학습 플랫폼 API v2.0",
+        "version": "2.0.0",
+        "features": [
+            "2인 팟캐스트 (10분)",
+            "강의 비디오 (20분+)",
+            "읽기 자료 (10분)",
+            "다양한 퀴즈 (4지선다 10개, 단답형 5개, 서술형 2개)",
+            "심화 질문 (3개)",
+            "실시간 챗봇"
+        ],
         "docs": "/docs",
         "status": "running"
     }

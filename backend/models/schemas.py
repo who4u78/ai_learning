@@ -1,5 +1,5 @@
 from pydantic import BaseModel, HttpUrl
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 from enum import Enum
 
@@ -18,38 +18,163 @@ class ContentGenerationRequest(BaseModel):
     source_data: str  # URL, HTML, 또는 텍스트
     title: Optional[str] = None
     language: str = "ko"  # 출력 언어
-    include_quiz: bool = True
-    include_summary: bool = True
-    include_examples: bool = True
 
 
-class LearningSection(BaseModel):
-    """학습 섹션"""
-    id: str
+# ============= 팟캐스트 관련 =============
+
+class PodcastDialogue(BaseModel):
+    """팟캐스트 대화"""
+    speaker: str  # "host" or "guest"
+    text: str
+    timestamp: Optional[float] = None  # 초 단위
+
+
+class PodcastScript(BaseModel):
+    """팟캐스트 스크립트"""
     title: str
-    content: str
-    order: int
-    estimated_time: Optional[int] = None  # 예상 학습 시간(분)
+    host_name: str = "진행자"
+    guest_name: str = "게스트"
+    dialogues: List[PodcastDialogue]
+    duration_minutes: int  # 목표 시간
 
 
-class Quiz(BaseModel):
-    """퀴즈"""
-    question: str
-    options: List[str]
-    correct_answer: int
-    explanation: str
-
-
-class GeneratedContent(BaseModel):
-    """생성된 콘텐츠"""
+class Podcast(BaseModel):
+    """팟캐스트 (2인 대화)"""
     id: str
-    title: str
-    summary: str
-    sections: List[LearningSection]
-    quizzes: Optional[List[Quiz]] = None
+    script: PodcastScript
+    audio_url: Optional[str] = None
+    duration: Optional[float] = None  # 실제 재생 시간(초)
     created_at: datetime
+
+
+# ============= 강의 비디오 관련 =============
+
+class LectureSlide(BaseModel):
+    """강의 슬라이드"""
+    slide_number: int
+    title: str
+    content: List[str]  # 슬라이드 내용 (불릿 포인트)
+    narration: str  # 나레이션 텍스트
+    duration: Optional[float] = None  # 슬라이드 표시 시간(초)
+    image_path: Optional[str] = None
+
+
+class VideoLecture(BaseModel):
+    """강의 비디오"""
+    id: str
+    title: str
+    slides: List[LectureSlide]
+    video_url: Optional[str] = None
+    total_duration: Optional[float] = None  # 총 재생 시간(초)
+    created_at: datetime
+
+
+# ============= 읽기 자료 =============
+
+class ReadingMaterial(BaseModel):
+    """읽기 자료"""
+    id: str
+    title: str
+    content: str  # 마크다운 형식
+    estimated_reading_time: int  # 예상 읽기 시간(분)
+    created_at: datetime
+
+
+# ============= 질문 및 퀴즈 =============
+
+class DeepThinkingQuestion(BaseModel):
+    """심화 사고 질문"""
+    question: str
+    context: Optional[str] = None  # 질문의 맥락
+    hints: Optional[List[str]] = None  # 힌트
+
+
+class MultipleChoiceQuiz(BaseModel):
+    """4지선다형 퀴즈"""
+    question: str
+    options: List[str]  # 4개의 선택지
+    correct_answer: int  # 정답 인덱스 (0-3)
+    explanation: str
+    difficulty: Optional[str] = "medium"  # easy, medium, hard
+
+
+class ShortAnswerQuiz(BaseModel):
+    """단답형 퀴즈"""
+    question: str
+    correct_answers: List[str]  # 가능한 정답들 (여러 형태 허용)
+    explanation: str
+    case_sensitive: bool = False
+
+
+class EssayQuiz(BaseModel):
+    """서술형 문제"""
+    question: str
+    suggested_answer: str  # 예시 답안
+    grading_criteria: List[str]  # 채점 기준
+    min_words: Optional[int] = 100
+
+
+# ============= 챗봇 =============
+
+class ChatMessage(BaseModel):
+    """챗봇 메시지"""
+    role: str  # "user" or "assistant"
+    content: str
+    timestamp: datetime
+
+
+class ChatRequest(BaseModel):
+    """챗봇 요청"""
+    content_id: str  # 학습 콘텐츠 ID (컨텍스트)
+    message: str
+    conversation_history: Optional[List[ChatMessage]] = []
+
+
+class ChatResponse(BaseModel):
+    """챗봇 응답"""
+    message: str
+    timestamp: datetime
+
+
+# ============= 통합 학습 콘텐츠 =============
+
+class LearningContent(BaseModel):
+    """통합 학습 콘텐츠"""
+    id: str
+    title: str
+    description: str
+
+    # 1. 팟캐스트 (10분)
+    podcast: Optional[Podcast] = None
+
+    # 2. 강의 비디오 (20분+)
+    video_lecture: Optional[VideoLecture] = None
+
+    # 3. 읽기 자료 (10분)
+    reading_material: Optional[ReadingMaterial] = None
+
+    # 4. 심화 질문 (3개)
+    deep_questions: List[DeepThinkingQuestion] = []
+
+    # 5. 4지선다 퀴즈 (10문제)
+    multiple_choice_quizzes: List[MultipleChoiceQuiz] = []
+
+    # 6. 단답형 퀴즈 (5문제)
+    short_answer_quizzes: List[ShortAnswerQuiz] = []
+
+    # 7. 서술형 문제 (2개)
+    essay_quizzes: List[EssayQuiz] = []
+
+    # 원본 소스 정보
+    source_url: Optional[str] = None
+    source_text: Optional[str] = None
+
+    created_at: datetime
+    updated_at: datetime
     metadata: Optional[Dict[str, Any]] = None
 
+
+# ============= 기타 =============
 
 class TTSRequest(BaseModel):
     """TTS 요청"""
@@ -69,7 +194,6 @@ class TTSResponse(BaseModel):
 class VideoGenerationRequest(BaseModel):
     """비디오 생성 요청"""
     content_id: str
-    section_ids: Optional[List[str]] = None  # None이면 전체 섹션
     include_subtitles: bool = True
     resolution: str = "1280x720"
     fps: int = 30
@@ -83,22 +207,10 @@ class VideoGenerationResponse(BaseModel):
     size_mb: float
 
 
-class Course(BaseModel):
-    """코스"""
-    id: str
-    title: str
-    description: str
-    content_ids: List[str]
-    created_at: datetime
-    updated_at: datetime
-    thumbnail_url: Optional[str] = None
-
-
-class CourseProgress(BaseModel):
-    """코스 진행 상황"""
-    course_id: str
-    user_id: str
-    completed_sections: List[str]
-    quiz_scores: Dict[str, float]
-    progress_percentage: float
-    last_accessed: datetime
+class ContentGenerationStatus(BaseModel):
+    """콘텐츠 생성 상태"""
+    content_id: str
+    status: str  # "processing", "completed", "failed"
+    progress: int  # 0-100
+    current_task: Optional[str] = None
+    error: Optional[str] = None

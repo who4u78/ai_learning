@@ -1,92 +1,73 @@
-# 한글 AI 학습 플랫폼
+# 한글 AI 학습 플랫폼 v2.0
 
-HTML/텍스트 소스를 한글 학습 콘텐츠로 자동 변환하는 AI 플랫폼
+> HTML/텍스트를 **완전한 한글 학습 과정**으로 자동 변환하는 AI 플랫폼
+> 
+> oboe.fyi 스타일의 종합 학습 경험 제공
 
-## 주요 기능
+## 🎯 주요 기능
 
-- 📝 **콘텐츠 생성**: 원본 소스를 분석해 한글 학습 자료 자동 생성
-- 🎤 **음성 합성**: Fish Audio TTS로 자연스러운 한글 음성 생성
-- 🎥 **비디오 생성**: 텍스트 + 음성 + 시각자료를 결합한 학습 비디오
-- 🎓 **인터랙티브 학습**: 퀴즈, 요약, 상세 설명 제공
+### 📻 1. 2인 팟캐스트 (10분)
+- 진행자와 게스트의 자연스러운 대화
+- Fish Audio TTS로 2개의 다른 음성 생성
+- 핵심 개념을 쉽게 설명
+- 실생활 예시 포함
 
-## 기술 스택
+### 🎥 2. 강의 비디오 (20분 이상)
+- 전문적인 강의 슬라이드 자동 생성 (8-12장)
+- 슬라이드와 나레이션이 결합된 비디오
+- 논리적 흐름과 시각적 구성
+- MP4 포맷, 720p 해상도
 
-- **Backend**: FastAPI (Python 3.11+)
-- **Frontend**: Next.js 14 (React)
-- **AI**: Anthropic Claude API
-- **TTS**: Fish Audio API
-- **Video**: FFmpeg
-- **Database**: SQLite (개발), PostgreSQL (배포)
+### 📖 3. 읽기 자료 (10분 분량)
+- 체계적으로 구조화된 텍스트
+- 마크다운 형식
+- 2500-3000자 분량
 
-## 프로젝트 구조
+### 💭 4. 심화 사고 질문 (3개)
+- 비판적 사고를 유도하는 열린 질문
+- 맥락과 힌트 제공
 
-```
-ai_learning/
-├── backend/              # FastAPI 서버
-│   ├── api/             # API 엔드포인트
-│   ├── services/        # 비즈니스 로직
-│   │   ├── content_generator.py  # AI 콘텐츠 생성
-│   │   ├── tts_service.py        # Fish Audio TTS
-│   │   └── video_service.py      # 비디오 생성
-│   ├── models/          # 데이터 모델
-│   └── utils/           # 유틸리티
-├── frontend/            # Next.js 애플리케이션
-│   ├── app/            # App Router
-│   ├── components/     # React 컴포넌트
-│   └── lib/            # 유틸리티
-├── data/               # 학습 데이터 저장
-│   ├── sources/        # 원본 소스
-│   ├── content/        # 생성된 콘텐츠
-│   ├── audio/          # 음성 파일
-│   └── videos/         # 비디오 파일
-└── docs/               # 문서
+### ✅ 5. 다양한 퀴즈
+- **4지선다형** (10문제) - 난이도 다양
+- **단답형** (5문제) - 핵심 개념 확인
+- **서술형** (2문제) - 종합 이해 확인
 
-```
+### 🤖 6. 실시간 학습 챗봇
+- Claude API 기반
+- 학습 내용을 컨텍스트로 활용
+- 즉시 질문하고 답변 받기
 
-## 로컬 개발 시작
+## 💰 비용 최적화
 
-### 1. Backend 설정
+- **단일 API 호출**: 모든 자료를 1회의 Claude API 호출로 생성
+- **Sonnet 모델**: GPT-4 대비 1/5 가격
+- **예상 비용**: ~$0.25 per 학습 자료
+
+## 🚀 빠른 시작
 
 ```bash
+# 1. API 키 설정
 cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+cp .env.example .env
+nano .env  # ANTHROPIC_API_KEY, FISH_AUDIO_API_KEY 입력
+
+# 2. 의존성 설치
 pip install -r requirements.txt
-cp .env.example .env  # API 키 설정
-uvicorn main:app --reload
+cd ../frontend && npm install
+
+# 3. 실행
+cd ..
+./start-all.sh
+
+# 4. 접속
+# Frontend: http://localhost:3000
+# API Docs: http://localhost:8000/docs
 ```
 
-### 2. Frontend 설정
+상세 가이드: [SETUP.md](SETUP.md)
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## 📖 문서
 
-### 3. 환경 변수 설정
-
-`.env` 파일에 필요한 API 키 설정:
-- `ANTHROPIC_API_KEY`: Claude API 키
-- `FISH_AUDIO_API_KEY`: Fish Audio API 키
-
-## 사용 방법
-
-1. 학습 소스 URL 또는 HTML 파일 업로드
-2. AI가 콘텐츠 분석 및 한글 학습 자료 생성
-3. 음성 합성 및 비디오 생성
-4. 웹 인터페이스에서 학습
-
-## 개발 로드맵
-
-- [x] 프로젝트 구조 설계
-- [ ] Backend API 구현
-- [ ] AI 콘텐츠 생성 서비스
-- [ ] Fish Audio TTS 통합
-- [ ] 비디오 생성 파이프라인
-- [ ] Frontend UI 구현
-- [ ] 통합 테스트
-
-## 라이선스
-
-MIT
+- [설치 가이드](SETUP.md)
+- [사용 방법](USAGE.md)
+- [API 문서](http://localhost:8000/docs)
