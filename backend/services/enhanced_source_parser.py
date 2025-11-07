@@ -13,6 +13,16 @@ from pypdf import PdfReader
 from docx import Document
 from youtube_transcript_api import YouTubeTranscriptApi
 import re
+try:
+    import openpyxl
+    EXCEL_AVAILABLE = True
+except ImportError:
+    EXCEL_AVAILABLE = False
+try:
+    from pptx import Presentation
+    PPTX_AVAILABLE = True
+except ImportError:
+    PPTX_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -270,6 +280,103 @@ class EnhancedSourceParser:
             logger.error(f"Word 파싱 실패: {str(e)}")
             raise Exception(f"Word 파싱 실패: {str(e)}")
 
+    async def _parse_excel(self, file_path: str) -> Dict[str, Any]:
+        """Excel 파일(.xlsx, .xls) 파싱"""
+        try:
+            if not EXCEL_AVAILABLE:
+                raise Exception("openpyxl이 설치되지 않았습니다. pip install openpyxl")
+
+            logger.info(f"Excel 파싱 시작: {file_path}")
+
+            workbook = openpyxl.load_workbook(file_path, data_only=True)
+            title = os.path.basename(file_path)
+
+            text_content = ""
+            sections = []
+
+            # 모든 시트 파싱
+            for sheet_name in workbook.sheetnames:
+                sheet = workbook[sheet_name]
+
+                section_content = f"## {sheet_name}\n\n"
+
+                # 시트의 모든 행 읽기
+                for row in sheet.iter_rows(values_only=True):
+                    # None이 아닌 셀만 추출
+                    row_data = [str(cell) for cell in row if cell is not None]
+                    if row_data:
+                        section_content += " | ".join(row_data) + "\n"
+
+                text_content += section_content + "\n\n"
+                sections.append({"title": sheet_name, "content": section_content})
+
+            result = {
+                "title": title,
+                "description": f"Excel 파일 ({len(workbook.sheetnames)} 시트)",
+                "url": None,
+                "text_content": text_content,
+                "markdown_content": text_content,
+                "sections": sections,
+                "word_count": len(text_content.split()),
+                "sheet_count": len(workbook.sheetnames)
+            }
+
+            logger.info(f"Excel 파싱 완료: {len(workbook.sheetnames)} 시트, {result['word_count']} 단어")
+            return result
+
+        except Exception as e:
+            logger.error(f"Excel 파싱 실패: {str(e)}")
+            raise Exception(f"Excel 파싱 실패: {str(e)}")
+
+    async def _parse_pptx(self, file_path: str) -> Dict[str, Any]:
+        """PowerPoint 파일(.pptx) 파싱"""
+        try:
+            if not PPTX_AVAILABLE:
+                raise Exception("python-pptx가 설치되지 않았습니다. pip install python-pptx")
+
+            logger.info(f"PowerPoint 파싱 시작: {file_path}")
+
+            presentation = Presentation(file_path)
+            title = os.path.basename(file_path)
+
+            text_content = ""
+            sections = []
+
+            # 모든 슬라이드 파싱
+            for i, slide in enumerate(presentation.slides):
+                slide_title = f"슬라이드 {i + 1}"
+                slide_content = ""
+
+                # 슬라이드의 모든 도형에서 텍스트 추출
+                for shape in slide.shapes:
+                    if hasattr(shape, "text") and shape.text:
+                        # 첫 번째 텍스트를 제목으로 사용
+                        if not slide_content:
+                            slide_title = shape.text[:100]  # 최대 100자
+                        slide_content += shape.text + "\n\n"
+
+                if slide_content:
+                    text_content += f"## {slide_title}\n\n{slide_content}\n\n"
+                    sections.append({"title": slide_title, "content": slide_content})
+
+            result = {
+                "title": title,
+                "description": f"PowerPoint 파일 ({len(presentation.slides)} 슬라이드)",
+                "url": None,
+                "text_content": text_content,
+                "markdown_content": text_content,
+                "sections": sections,
+                "word_count": len(text_content.split()),
+                "slide_count": len(presentation.slides)
+            }
+
+            logger.info(f"PowerPoint 파싱 완료: {len(presentation.slides)} 슬라이드, {result['word_count']} 단어")
+            return result
+
+        except Exception as e:
+            logger.error(f"PowerPoint 파싱 실패: {str(e)}")
+            raise Exception(f"PowerPoint 파싱 실패: {str(e)}")
+
     async def _parse_file(self, file_path: str) -> Dict[str, Any]:
         """파일 파싱 (확장자에 따라 자동 선택)"""
         logger.info(f"파일 파싱: {file_path}")
@@ -283,16 +390,20 @@ class EnhancedSourceParser:
             return await self._parse_pdf(file_path)
         elif ext in ['.docx', '.doc']:
             return await self._parse_docx(file_path)
+        elif ext in ['.xlsx', '.xls']:
+            return await self._parse_excel(file_path)
+        elif ext in ['.pptx', '.ppt']:
+            return await self._parse_pptx(file_path)
         elif ext in ['.html', '.htm']:
             with open(file_path, 'r', encoding='utf-8') as f:
                 html_content = f.read()
             return await self._parse_html(html_content)
-        elif ext in ['.txt', '.md']:
+        elif ext in ['.txt', '.md', '.qmd', '.markdown']:
             with open(file_path, 'r', encoding='utf-8') as f:
                 text_content = f.read()
             return await self._parse_text(text_content)
         else:
-            raise Exception(f"지원하지 않는 파일 형식: {ext}")
+            raise Exception(f"지원하지 않는 파일 형식: {ext}. 지원 형식: PDF, DOCX, XLSX, PPTX, HTML, TXT, MD, QMD")
 
     async def _parse_url(self, url: str) -> Dict[str, Any]:
         """URL에서 콘텐츠 파싱 (기존 코드)"""

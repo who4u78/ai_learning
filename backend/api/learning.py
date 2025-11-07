@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, File, UploadFile, Form
 from fastapi.responses import JSONResponse
+from typing import List
 from models.schemas import (
     ContentGenerationRequest,
     LearningContent,
@@ -213,3 +214,75 @@ async def chat_with_bot(request: ChatRequest):
     except Exception as e:
         logger.error(f"챗봇 응답 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/upload", response_model=ContentGenerationStatus)
+async def upload_and_generate(
+    files: List[UploadFile] = File(...),
+    background_tasks: BackgroundTasks = None
+):
+    """
+    파일 업로드 후 학습 콘텐츠 생성
+
+    여러 파일을 동시에 업로드할 수 있습니다:
+    - PDF, Word, Excel, PowerPoint
+    - Markdown, Text
+    - 여러 파일을 결합하여 하나의 학습 자료 생성
+    """
+    import os
+    import tempfile
+    import uuid
+
+    try:
+        logger.info(f"{len(files)}개 파일 업로드 시작")
+
+        # 임시 디렉토리 생성
+        temp_dir = tempfile.mkdtemp()
+        file_paths = []
+
+        # 모든 파일 저장
+        for file in files:
+            # 안전한 파일명 생성
+            safe_filename = f"{uuid.uuid4()}_{file.filename}"
+            file_path = os.path.join(temp_dir, safe_filename)
+
+            # 파일 저장
+            with open(file_path, "wb") as f:
+                content = await file.read()
+                f.write(content)
+
+            file_paths.append(file_path)
+            logger.info(f"파일 저장: {file.filename} -> {file_path}")
+
+        # ContentGenerationRequest 생성
+        if len(file_paths) == 1:
+            # 단일 파일
+            request = ContentGenerationRequest(
+                source_type="file",
+                source_data=file_paths[0]
+            )
+        else:
+            # 다중 파일
+            sources = [{"type": "file", "data": path} for path in file_paths]
+            request = ContentGenerationRequest(sources=sources)
+
+        # 백그라운드 작업으로 생성 시작
+        content_id = str(uuid.uuid4())
+        generation_status[content_id] = {
+            "content_id": content_id,
+            "status": "processing",
+            "progress": 0,
+            "current_task": "파일 처리 중..."
+        }
+
+        background_tasks.add_task(
+            generate_content_background,
+            content_id,
+            request
+        )
+
+        return ContentGenerationStatus(**generation_status[content_id])
+
+    except Exception as e:
+        logger.error(f"파일 업로드 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"파일 업로드 실패: {str(e)}")
