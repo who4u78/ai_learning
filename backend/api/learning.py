@@ -7,7 +7,7 @@ from models.schemas import (
     ChatRequest,
     ChatResponse
 )
-from services.source_parser import SourceParser
+from services.enhanced_source_parser import EnhancedSourceParser
 from services.learning_content_generator import LearningContentGenerator
 from services.podcast_service import PodcastService
 from services.lecture_service import LectureService
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # 서비스 초기화
-source_parser = SourceParser()
+source_parser = EnhancedSourceParser()  # 확장된 파서 사용
 content_generator = LearningContentGenerator()
 podcast_service = PodcastService()
 lecture_service = LectureService()
@@ -83,10 +83,19 @@ async def generate_content_background(content_id: str, request: ContentGeneratio
             "current_task": "소스 파싱 중..."
         })
 
-        parsed_content = await source_parser.parse(
-            source_type=request.source_type,
-            source_data=request.source_data
-        )
+        # 다중 소스 또는 단일 소스 처리
+        if request.sources:
+            # 여러 소스 결합
+            logger.info(f"{len(request.sources)}개의 소스를 결합합니다")
+            parsed_content = await source_parser.parse_multiple([
+                {"type": s.type.value, "data": s.data} for s in request.sources
+            ])
+        else:
+            # 단일 소스 (하위 호환성)
+            parsed_content = await source_parser.parse(
+                source_type=request.source_type,
+                source_data=request.source_data
+            )
 
         # 2. AI 콘텐츠 생성 (50%)
         generation_status[content_id].update({

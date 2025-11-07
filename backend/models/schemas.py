@@ -6,16 +6,28 @@ from enum import Enum
 
 class ContentSourceType(str, Enum):
     """콘텐츠 소스 타입"""
-    URL = "url"
-    HTML = "html"
-    TEXT = "text"
-    FILE = "file"
+    URL = "url"          # 웹페이지 URL
+    HTML = "html"        # HTML 문자열
+    TEXT = "text"        # 일반 텍스트
+    FILE = "file"        # 파일 경로 (PDF, DOCX, TXT, HTML)
+    YOUTUBE = "youtube"  # YouTube URL (자막)
+
+
+class SourceInput(BaseModel):
+    """개별 소스 입력"""
+    type: ContentSourceType
+    data: str  # URL, 파일 경로, 텍스트 등
 
 
 class ContentGenerationRequest(BaseModel):
     """콘텐츠 생성 요청"""
-    source_type: ContentSourceType
-    source_data: str  # URL, HTML, 또는 텍스트
+    # 단일 소스 (하위 호환성)
+    source_type: Optional[ContentSourceType] = None
+    source_data: Optional[str] = None
+
+    # 다중 소스 (새 기능)
+    sources: Optional[List[SourceInput]] = None
+
     title: Optional[str] = None
     language: str = "ko"  # 출력 언어
 
