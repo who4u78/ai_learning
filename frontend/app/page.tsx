@@ -1,15 +1,18 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import { learningApi, ContentGenerationRequest } from '@/lib/api'
 
 export default function Home() {
+  const router = useRouter()
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [contentId, setContentId] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [message, setMessage] = useState('')
+  const [completed, setCompleted] = useState(false)
 
   const handleGenerate = async () => {
     if (!url.trim()) return
@@ -17,6 +20,7 @@ export default function Home() {
     setLoading(true)
     setProgress(0)
     setMessage('생성 시작...')
+    setCompleted(false)
 
     try {
       const request: ContentGenerationRequest = {
@@ -36,16 +40,23 @@ export default function Home() {
         if (s.status === 'completed') {
           clearInterval(interval)
           setLoading(false)
+          setCompleted(true)
           setMessage('완료! 학습 자료가 생성되었습니다.')
         } else if (s.status === 'failed') {
           clearInterval(interval)
           setLoading(false)
-          setMessage('생성 실패: ' + s.error)
+          setMessage('생성 실패: ' + (s.error || '알 수 없는 오류'))
         }
       }, 3000)
     } catch (error: any) {
       setLoading(false)
       setMessage('오류: ' + error.message)
+    }
+  }
+
+  const handleViewContent = () => {
+    if (contentId) {
+      router.push(`/learn/${contentId}`)
     }
   }
 
@@ -94,19 +105,21 @@ export default function Home() {
               </div>
             )}
 
-            {contentId && !loading && (
+            {contentId && !loading && completed && (
               <div className="mt-8 p-6 bg-green-50 border-2 border-green-200 rounded-lg">
-                <h3 className="text-xl font-bold text-green-800 mb-2">✅ 생성 완료!</h3>
-                <p className="text-green-700 mb-4">콘텐츠 ID: {contentId}</p>
-                <p className="text-sm text-gray-600">
-                  API Docs에서 확인: http://localhost:8000/docs
+                <h3 className="text-xl font-bold text-green-800 mb-4">✅ 생성 완료!</h3>
+                <p className="text-green-700 mb-6">
+                  모든 학습 자료가 준비되었습니다! 이제 학습을 시작해보세요.
                 </p>
-                <p className="text-sm text-gray-600 mt-2">
-                  다음 명령어로 조회:
-                </p>
-                <code className="block mt-2 p-3 bg-gray-900 text-green-400 rounded text-xs">
-                  curl http://localhost:8000/api/learning/{contentId}
-                </code>
+                <button
+                  onClick={handleViewContent}
+                  className="w-full py-4 bg-green-600 text-white font-bold text-lg rounded-lg hover:bg-green-700 transition-colors mb-3"
+                >
+                  🎓 학습 시작하기
+                </button>
+                <div className="text-xs text-gray-600 text-center">
+                  콘텐츠 ID: {contentId}
+                </div>
               </div>
             )}
 
@@ -124,10 +137,6 @@ export default function Home() {
               </ul>
             </div>
 
-            <div className="mt-6 text-center text-sm text-gray-500">
-              <p>Frontend UI는 개발 중입니다.</p>
-              <p className="mt-1">FRONTEND_TODO.md 참고</p>
-            </div>
           </div>
         </div>
       </main>
