@@ -24,9 +24,14 @@ class PodcastService:
 
         os.makedirs(self.audio_dir, exist_ok=True)
 
-        # 기본 보이스 ID (실제로는 Fish Audio에서 제공하는 한국어 보이스 사용)
-        self.host_voice_id = os.getenv("FISH_AUDIO_HOST_VOICE", "korean-male-1")
-        self.guest_voice_id = os.getenv("FISH_AUDIO_GUEST_VOICE", "korean-female-1")
+        # 음성 모델 ID (.env 파일에서 설정)
+        # Fish Audio에서 한국어 음성 모델 ID를 발급받아 설정해야 함
+        self.host_voice_id = os.getenv("FISH_AUDIO_HOST_VOICE_ID", "")
+        self.guest_voice_id = os.getenv("FISH_AUDIO_GUEST_VOICE_ID", "")
+
+        if not self.host_voice_id or not self.guest_voice_id:
+            logger.warning("Fish Audio 음성 모델 ID가 설정되지 않았습니다. TTS 생성이 불가능합니다.")
+            logger.warning("https://fish.audio 에서 음성 모델 ID를 발급받아 .env 파일에 설정하세요.")
 
     async def generate_podcast_audio(self, podcast: Podcast) -> TTSResponse:
         """
