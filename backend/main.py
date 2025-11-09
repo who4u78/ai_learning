@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import routers
-from api import content, audio, video, courses, learning
+from api import learning  # v2.0 통합 API만 사용
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -59,11 +59,7 @@ app.add_middleware(
 )
 
 # 라우터 등록
-app.include_router(learning.router, prefix="/api/learning", tags=["learning"])  # 새로운 통합 API
-app.include_router(content.router, prefix="/api/content", tags=["content"])  # 하위 호환성
-app.include_router(audio.router, prefix="/api/audio", tags=["audio"])
-app.include_router(video.router, prefix="/api/video", tags=["video"])
-app.include_router(courses.router, prefix="/api/courses", tags=["courses"])
+app.include_router(learning.router, prefix="/api/learning", tags=["learning"])  # v2.0 통합 API
 
 @app.get("/")
 async def root():
