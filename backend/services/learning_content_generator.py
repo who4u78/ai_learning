@@ -11,7 +11,7 @@ import os
 import json
 import uuid
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from models.schemas import (
     LearningContent,
     Podcast,
