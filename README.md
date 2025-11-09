@@ -45,32 +45,71 @@
 
 ## 🚀 빠른 시작
 
+### Linux/macOS
 ```bash
 # 1. API 키 설정
 cd backend
 cp .env.example .env
-nano .env  # ANTHROPIC_API_KEY, FISH_AUDIO_API_KEY 입력
+nano .env  # ANTHROPIC_API_KEY 입력 (필수), FISH_AUDIO 설정 (선택)
 
 # 2. 의존성 설치
+python3.11 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
+
 cd ../frontend && npm install
 
 # 3. 실행
-cd ..
-./start-all.sh
+# Backend (터미널 1)
+cd backend && source venv/bin/activate
+python -m uvicorn main:app --reload
+
+# Frontend (터미널 2)
+cd frontend && npm run dev
 
 # 4. 접속
 # Frontend: http://localhost:3000
 # API Docs: http://localhost:8000/docs
 ```
 
-상세 가이드: [SETUP.md](SETUP.md)
+### Windows
+```powershell
+# 1. API 키 설정
+cd backend
+copy .env.example .env
+notepad .env  # ANTHROPIC_API_KEY 입력 (필수), FISH_AUDIO 설정 (선택)
+
+# 2. 의존성 설치
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+cd ..\frontend
+npm install
+
+# 3. 실행
+# Backend (PowerShell 1)
+cd backend
+.\.venv\Scripts\Activate.ps1
+python -m uvicorn main:app --reload
+
+# Frontend (PowerShell 2)
+cd frontend
+npm run dev
+```
+
+**⚠️ Windows 사용자**: Pillow 설치 오류 발생 시 → **[WINDOWS_SETUP.md](WINDOWS_SETUP.md)** 참고
 
 ## 📖 문서
 
-- [설치 가이드](INSTALLATION_GUIDE.md) - 로컬 설치 및 테스트 방법
-- [다중 소스 가이드](MULTI_SOURCE_GUIDE.md) - 여러 소스 결합 방법
-- [Frontend 완료 보고서](FRONTEND_COMPLETE.md) - 프론트엔드 구현 상세
+### 설치 가이드
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - 상세 설치 가이드 (모든 OS)
+- **[WINDOWS_SETUP.md](WINDOWS_SETUP.md)** ⭐ - Windows 전용 가이드 (문제 해결 포함)
+- [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) - 기본 설치 방법
+
+### 사용 가이드
+- [MULTI_SOURCE_GUIDE.md](MULTI_SOURCE_GUIDE.md) - 다중 소스 사용법
+- [FRONTEND_COMPLETE.md](FRONTEND_COMPLETE.md) - 프론트엔드 기능
 - [API 문서](http://localhost:8000/docs) - FastAPI 자동 문서
 
 ## ✨ 새로운 기능 (v2.0)
@@ -82,13 +121,16 @@ cd ..
 - **인터랙티브 퀴즈**: 자동 채점 + 즉시 피드백
 - **플로팅 챗봇**: 언제든 질문 가능
 
-### 📚 다양한 소스 지원
-- 웹 URL (HTML 파싱)
-- PDF 파일
-- Word 문서 (.docx)
-- YouTube 비디오 (자막)
-- 일반 텍스트
-- **여러 소스 결합** (예: YouTube + PDF + 웹)
+### 📚 다양한 소스 지원 (v2.0 신규)
+- 🌐 웹 URL (HTML 파싱)
+- 📺 YouTube 비디오 (자막 추출)
+- 📄 PDF 파일
+- 📝 Word 문서 (.docx)
+- 📊 **Excel 스프레드시트** (.xlsx, .xls) ⭐ 신규
+- 📽️ **PowerPoint 프레젠테이션** (.pptx, .ppt) ⭐ 신규
+- 📋 Markdown 문서 (.md, .qmd)
+- 📃 일반 텍스트 (.txt)
+- 🔗 **여러 소스 결합** (예: YouTube + PDF + PowerPoint)
 
 ### 💡 학습 경험
 - 읽기 → 듣기 → 보기 → 퀴즈 → 심화 학습
@@ -147,12 +189,20 @@ URL: https://ko.wikipedia.org/wiki/인공지능
 
 ### 학습 자료 1개당 예상 비용
 
+**필수 비용**:
 - **Claude API**: ~$0.25 (단일 API 호출)
+  - 읽기 자료, 퀴즈, 질문, 스크립트 생성
+
+**선택 비용** (TTS 사용 시):
 - **Fish Audio TTS**: ~$0.10 (10분 팟캐스트)
 - **Fish Audio TTS**: ~$0.20 (20분 강의)
-- **총 비용**: **~$0.55 per 학습 자료**
+
+**총 비용**:
+- **텍스트만**: **$0.25** per 학습 자료
+- **음성 포함**: **$0.55** per 학습 자료
 
 ### 비용 절감 전략
 ✅ 모든 텍스트 콘텐츠를 1회 API 호출로 생성 (80% 절감)
 ✅ Claude Sonnet 사용 (GPT-4 대비 1/5 가격)
+✅ TTS 선택적 사용 (테스트 시에는 텍스트만)
 ✅ 캐싱 활용 (동일 소스 재사용)

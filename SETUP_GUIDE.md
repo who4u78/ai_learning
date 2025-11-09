@@ -199,18 +199,56 @@ ls -la
 sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-### 4.2. Fish Audio API 키 발급 (TTS)
+### 4.2. Fish Audio API 키 및 음성 모델 발급 (TTS - 선택사항)
 
-**선택사항**: TTS를 사용하려면 필요합니다.
+**선택사항**: 팟캐스트/강의 음성을 생성하려면 필요합니다. 텍스트만 사용할 경우 생략 가능합니다.
+
+#### 단계 1: 계정 생성 및 API 키 발급
 
 1. **Fish Audio 접속**
    - https://fish.audio 방문
-   - 계정 생성
+   - "Sign Up" 클릭하여 계정 생성 (Google 계정 연동 가능)
+   - 로그인
 
 2. **API 키 발급**
-   - Dashboard → API Keys
-   - "Create New Key" 클릭
-   - 키 복사
+   - Dashboard → Settings → API Keys 메뉴
+   - "Create New Key" 버튼 클릭
+   - API 키 복사 (예: `fk_xxxxxxxxxxxxxxxx`)
+
+#### 단계 2: 한국어 음성 모델 선택 (중요!)
+
+**진행자와 게스트용으로 2개의 음성 모델 ID가 필요합니다.**
+
+1. **음성 목록 페이지 접속**
+   - https://fish.audio/ko-KR/voices 접속
+   - 또는 Dashboard → Voice Library
+
+2. **한국어 음성 모델 찾기**
+   - 언어 필터에서 "Korean" 선택
+   - 음성 샘플 들어보기 (재생 버튼 클릭)
+
+3. **2개 음성 선택**
+   - **진행자용 음성** 1개 선택 (예: 남성 목소리)
+   - **게스트용 음성** 1개 선택 (예: 여성 목소리)
+
+4. **Model ID 복사**
+   - 각 음성 페이지에서 "Model ID" 또는 "Voice ID" 찾기
+   - ID 형식: `7d2a7894-xxxx-xxxx-xxxx-xxxxxxxxxxxx` (UUID 형식)
+   - 2개 모두 복사하여 메모장에 저장
+
+#### Fish Audio 비용
+
+- 무료 크레딧: 가입 시 제공
+- 유료 플랜: 약 $0.10 per 분
+- 학습 자료 1개당 약 $0.30 (10분 팟캐스트 + 20분 강의)
+
+#### TTS 없이 사용하기
+
+Fish Audio를 설정하지 않으면:
+- ✅ **정상 작동**: 모든 텍스트 자료 (읽기, 퀴즈, 질문)
+- ✅ **정상 작동**: 팟캐스트/강의 스크립트 생성
+- ❌ **작동 안 함**: 팟캐스트 음성 파일 생성
+- ❌ **작동 안 함**: 강의 비디오 나레이션
 
 ### 4.3. 환경 변수 설정
 
@@ -227,32 +265,64 @@ nano .env
 # 또는 code .env (VS Code)
 ```
 
-#### .env 파일 내용 (예시)
+#### .env 파일 내용
 
+**Linux/macOS 편집**:
 ```bash
-# Anthropic API (필수)
-ANTHROPIC_API_KEY=sk-ant-api03-your-actual-key-here
+nano .env  # 또는 vi .env
+```
 
-# Fish Audio API (선택 - TTS용)
-FISH_AUDIO_API_KEY=your-fish-audio-key-here
-FISH_AUDIO_HOST_VOICE_ID=your-host-voice-id
-FISH_AUDIO_GUEST_VOICE_ID=your-guest-voice-id
+**Windows 편집**:
+```powershell
+notepad .env  # 메모장으로 열기
+```
 
-# 서버 설정
-API_HOST=0.0.0.0
-API_PORT=8000
+**필수 입력 내용**:
+```bash
+# ========================================
+# 필수: Anthropic API
+# ========================================
+ANTHROPIC_API_KEY=sk-ant-api03-실제키를여기에입력
+
+# ========================================
+# 선택: Fish Audio TTS (팟캐스트/강의 음성용)
+# ========================================
+# TTS를 사용하지 않으면 아래 3줄은 주석 처리하거나 비워두세요
+
+FISH_AUDIO_API_KEY=fk_실제키를여기에입력
+
+# Fish Audio 음성 모델 ID (https://fish.audio/ko-KR/voices 에서 확인)
+# 진행자용 음성 (예: 남성 목소리)
+FISH_AUDIO_HOST_VOICE_ID=7d2a7894-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+# 게스트용 음성 (예: 여성 목소리)
+FISH_AUDIO_GUEST_VOICE_ID=a3b4c5d6-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+# ========================================
+# 서버 설정 (기본값 사용 권장)
+# ========================================
+HOST=0.0.0.0
+PORT=8000
+DEBUG=True
 
 # 데이터 저장 경로
-DATA_DIR=./data
-OUTPUT_DIR=./output
+DATA_DIR=../data
+AUDIO_DIR=../data/audio
+VIDEOS_DIR=../data/videos
 
 # 로그 레벨
 LOG_LEVEL=INFO
 ```
 
 **저장 방법**:
-- nano 사용 시: `Ctrl + O` (저장) → `Enter` → `Ctrl + X` (종료)
-- vi 사용 시: `ESC` → `:wq` → `Enter`
+- **nano**: `Ctrl + O` (저장) → `Enter` → `Ctrl + X` (종료)
+- **vi**: `ESC` → `:wq` → `Enter`
+- **메모장(Windows)**: `Ctrl + S` (저장)
+
+**주의사항**:
+- ⚠️ `sk-ant-api03-`, `fk_` 등의 접두사 포함하여 전체 키 입력
+- ⚠️ 따옴표 없이 키 값만 입력
+- ⚠️ Fish Audio 사용 안 하면 해당 3줄은 주석 처리 (`#`)
 
 ---
 
@@ -290,11 +360,32 @@ pip install -r requirements.txt
 pip list | grep -E "(fastapi|anthropic|openpyxl|python-pptx)"
 ```
 
+#### ⚠️ Windows에서 Pillow 설치 오류 발생 시
+
+**증상**: `ERROR: Failed to build 'pillow' when getting requirements to build wheel`
+
+**해결 방법 1** (빠른 해결):
+```powershell
+pip cache purge
+pip install --no-cache-dir pillow
+pip install -r requirements.txt
+```
+
+**해결 방법 2** (근본 해결):
+1. Visual Studio Build Tools 설치
+   - https://visualstudio.microsoft.com/downloads/
+   - "Build Tools for Visual Studio 2022" 다운로드
+   - 설치 시 "C++ 빌드 도구" 선택
+2. 설치 후 재부팅
+3. `pip install -r requirements.txt` 재실행
+
+**자세한 내용**: `WINDOWS_SETUP.md` 참고
+
 **설치되는 주요 패키지**:
 - `fastapi` - 웹 API 프레임워크
 - `anthropic` - Claude API 클라이언트
-- `openpyxl` - Excel 파일 파싱
-- `python-pptx` - PowerPoint 파일 파싱
+- `openpyxl` - Excel 파일 파싱 ⭐ (새)
+- `python-pptx` - PowerPoint 파일 파싱 ⭐ (새)
 - `pypdf` - PDF 파일 파싱
 - `python-docx` - Word 파일 파싱
 - `youtube-transcript-api` - YouTube 자막 추출
@@ -789,34 +880,51 @@ tar -xzf backup_20240315.tar.gz
 
 ## 📞 도움말
 
-### 문서
-- [다중 소스 가이드](MULTI_SOURCE_GUIDE.md)
-- [Frontend 가이드](FRONTEND_COMPLETE.md)
-- [API 문서](http://localhost:8000/docs)
+### 📚 문서
+- **[Windows 설치 가이드](WINDOWS_SETUP.md)** ⭐ Windows 사용자 필독!
+- [다중 소스 가이드](MULTI_SOURCE_GUIDE.md) - 여러 파일 결합 방법
+- [Frontend 가이드](FRONTEND_COMPLETE.md) - UI 컴포넌트 설명
+- [API 문서](http://localhost:8000/docs) - FastAPI 자동 문서
 
-### 문제 발생 시
-1. 로그 확인: `backend/logs/`
-2. GitHub Issues 검색
-3. API 키 재확인
+### 🔧 문제 발생 시
+
+**Windows 사용자**:
+1. `WINDOWS_SETUP.md` 먼저 확인
+2. Pillow 설치 오류 → Visual C++ Build Tools 설치
+3. PowerShell 실행 정책 오류 → `Set-ExecutionPolicy RemoteSigned`
+
+**모든 플랫폼**:
+1. Backend 로그 확인: 터미널 출력 또는 `backend/logs/`
+2. .env 파일 API 키 재확인
+3. Fish Audio 설정 확인 (TTS 사용 시)
+4. GitHub Issues 검색
 
 ---
 
 ## ✅ 설치 체크리스트
 
+### 필수 항목
 - [ ] Python 3.11+ 설치 완료
 - [ ] Node.js 18+ 설치 완료
-- [ ] FFmpeg 설치 완료
+- [ ] FFmpeg 설치 완료 (Windows: Chocolatey 또는 수동 설치)
 - [ ] 프로젝트 다운로드 완료
-- [ ] Anthropic API 키 발급 완료
-- [ ] .env 파일 설정 완료
+- [ ] **Anthropic API 키 발급 완료** (필수!)
+- [ ] .env 파일 생성 및 Anthropic 키 입력
 - [ ] Backend 패키지 설치 완료
 - [ ] Frontend 패키지 설치 완료
-- [ ] Backend 서버 실행 성공
-- [ ] Frontend 서버 실행 성공
-- [ ] 브라우저 접속 성공
-- [ ] 첫 학습 자료 생성 성공
+- [ ] Backend 서버 실행 성공 (http://localhost:8000/docs 접속 확인)
+- [ ] Frontend 서버 실행 성공 (http://localhost:3000 접속 확인)
+- [ ] 첫 학습 자료 생성 성공 (텍스트만 생성도 OK)
 
-**모든 항목 완료 시 설치 성공! 🎉**
+### 선택 항목 (TTS 사용 시)
+- [ ] Fish Audio 계정 생성
+- [ ] Fish Audio API 키 발급
+- [ ] 한국어 음성 모델 2개 선택 (진행자용, 게스트용)
+- [ ] .env 파일에 Fish Audio 설정 추가
+- [ ] 팟캐스트 음성 생성 테스트
+
+**필수 항목 완료 시 기본 기능 사용 가능! 🎉**
+**선택 항목까지 완료 시 모든 기능 사용 가능! 🚀**
 
 ---
 
