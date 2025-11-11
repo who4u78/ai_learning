@@ -70,7 +70,7 @@ class LearningContentGenerator:
             # Claude API 호출 (단 1회로 모든 것 생성)
             response = self.client.messages.create(
                 model=self.model,
-                max_tokens=16000,  # 충분한 토큰
+                max_tokens=4096,  # Claude 3 Opus 최대값
                 temperature=0.7,
                 messages=[{
                     "role": "user",
