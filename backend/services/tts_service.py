@@ -8,7 +8,6 @@ import uuid
 import json
 from typing import Optional, List, Dict
 from models.schemas import TTSResponse
-from services.content_generator import ContentGenerator
 import logging
 import aiofiles
 
@@ -28,7 +27,6 @@ class TTSService:
         self.audio_dir = os.getenv("AUDIO_DIR", "../data/audio")
 
         os.makedirs(self.audio_dir, exist_ok=True)
-        self.content_generator = ContentGenerator()
 
     async def generate(
         self,
@@ -171,6 +169,8 @@ class TTSService:
         voice_id: Optional[str] = None
     ) -> List[Dict]:
         """
+        [DEPRECATED] v1.0 API용 메서드. v2.0에서는 사용하지 않음.
+
         콘텐츠의 섹션들에 대해 음성 생성
 
         Args:
@@ -181,47 +181,8 @@ class TTSService:
         Returns:
             생성된 오디오 파일 정보 리스트
         """
-        try:
-            # 콘텐츠 조회
-            content = await self.content_generator.get_content(content_id)
-            if not content:
-                raise Exception("콘텐츠를 찾을 수 없습니다")
-
-            audio_files = []
-
-            # 섹션별로 음성 생성
-            for section in content.sections:
-                # 특정 섹션만 생성하는 경우
-                if section_ids and section.id not in section_ids:
-                    continue
-
-                logger.info(f"섹션 음성 생성: {section.title}")
-
-                # 섹션 텍스트 준비
-                section_text = f"{section.title}\n\n{section.content}"
-
-                # TTS 생성
-                tts_response = await self.generate(
-                    text=section_text,
-                    voice_id=voice_id
-                )
-
-                audio_files.append({
-                    "section_id": section.id,
-                    "section_title": section.title,
-                    "audio_url": tts_response.audio_url,
-                    "duration": tts_response.duration,
-                    "file_path": tts_response.file_path
-                })
-
-            # 메타데이터 저장
-            await self._save_audio_metadata(content_id, audio_files)
-
-            return audio_files
-
-        except Exception as e:
-            logger.error(f"콘텐츠 음성 생성 실패: {str(e)}")
-            raise
+        logger.warning("generate_for_content()는 deprecated되었습니다. v2.0 API를 사용하세요.")
+        raise NotImplementedError("이 메서드는 v2.0에서 지원하지 않습니다.")
 
     async def _save_audio_metadata(self, content_id: str, audio_files: List[Dict]):
         """오디오 메타데이터 저장"""
