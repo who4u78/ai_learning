@@ -205,7 +205,7 @@ class LearningContentGenerator:
 
   "reading_material": {{
     "title": "읽기 자료 제목",
-    "content": "# 제목\\n\\n내용... (마크다운)",
+    "content": "마크다운 형식의 내용",
     "estimated_reading_time": 10
   }},
 

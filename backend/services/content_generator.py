@@ -123,43 +123,47 @@ class ContentGenerator:
         source_text = source_content.get("text_content", "")
         source_title = source_content.get("title", "")
 
+        # Python 3.11 f-string 호환성: 백슬래시를 변수로 분리
+        summary_field = '"summary": "전체 내용 요약 (3-5문장)",' if include_summary else ""
+        quiz_fields = ''',
+  "quizzes": [
+    {
+      "question": "퀴즈 질문",
+      "options": ["선택지1", "선택지2", "선택지3", "선택지4"],
+      "correct_answer": 0,
+      "explanation": "정답 해설"
+    }
+  ]''' if include_quiz else ""
+
+        examples_req = "5. 실제 예시와 사례 포함" if include_examples else ""
+
         prompt = f"""다음 콘텐츠를 분석하여 효과적인 학습 자료를 한글로 만들어주세요.
 
 # 원본 콘텐츠
 제목: {source_title}
 내용:
-{source_text[:10000]}  # 토큰 제한을 위해 일부만 사용
+{source_text[:10000]}
 
 # 요구사항
 1. 학습자가 이해하기 쉽도록 한글로 작성
 2. 핵심 개념을 명확하게 설명
 3. 논리적인 순서로 섹션 구성
 4. 각 섹션은 5-10분 안에 학습 가능한 분량
-{"5. 실제 예시와 사례 포함" if include_examples else ""}
+{examples_req}
 
 # 출력 형식 (반드시 JSON으로 응답)
 {{
   "title": "학습 자료 제목",
-  {"\"summary\": \"전체 내용 요약 (3-5문장)\"," if include_summary else ""}
+  {summary_field}
   "sections": [
     {{
       "id": "section-1",
       "title": "섹션 제목",
       "content": "섹션 내용 (한글, 마크다운 형식)",
       "order": 1,
-      "estimated_time": 7  // 예상 학습 시간(분)
+      "estimated_time": 7
     }}
-  ]
-  {"," + '''
-  "quizzes": [
-    {
-      "question": "퀴즈 질문",
-      "options": ["선택지1", "선택지2", "선택지3", "선택지4"],
-      "correct_answer": 0,  // 정답 인덱스 (0-3)
-      "explanation": "정답 해설"
-    }
-  ]
-  ''' if include_quiz else ""}
+  ]{quiz_fields}
 }}
 
 반드시 유효한 JSON 형식으로 응답해주세요. 마크다운 코드 블록 없이 순수 JSON만 반환하세요."""
