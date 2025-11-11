@@ -436,3 +436,200 @@ class LearningContentGenerator:
         except Exception as e:
             logger.error(f"콘텐츠 조회 실패: {str(e)}")
             return None
+
+    # === 단계별 생성 메서드 ===
+
+    async def generate_podcast(self, source_content: Dict[str, Any]) -> Dict[str, Any]:
+        """팟캐스트만 생성"""
+        source_text = source_content.get("text_content", "")[:8000]
+        source_title = source_content.get("title", "")
+
+        prompt = f"""다음 내용으로 **팟캐스트 스크립트**만 생성해주세요.
+
+# 원본
+제목: {source_title}
+내용: {source_text}
+
+# 요구사항
+- 진행자(host)와 게스트(guest)의 대화 6-8개
+- 핵심 내용을 쉽게 설명
+- 7-8분 분량
+
+# JSON 형식으로 응답
+{{
+  "title": "팟캐스트 제목",
+  "host_name": "진행자 이름",
+  "guest_name": "게스트 이름",
+  "dialogues": [
+    {{"speaker": "host", "text": "대화 내용"}},
+    {{"speaker": "guest", "text": "대화 내용"}}
+  ],
+  "duration_minutes": 8
+}}
+
+순수 JSON만 반환하세요 (코드 블록 없이)."""
+
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=2000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        return json.loads(response.content[0].text.strip())
+
+    async def generate_video_lecture(self, source_content: Dict[str, Any]) -> Dict[str, Any]:
+        """강의 슬라이드만 생성"""
+        source_text = source_content.get("text_content", "")[:8000]
+        source_title = source_content.get("title", "")
+
+        prompt = f"""다음 내용으로 **강의 슬라이드**만 생성해주세요.
+
+# 원본
+제목: {source_title}
+내용: {source_text}
+
+# 요구사항
+- 슬라이드 5-6장
+- 각 슬라이드: 제목, 내용(불릿 3개), 나레이션(2-3문장)
+
+# JSON 형식
+{{
+  "title": "강의 제목",
+  "slides": [
+    {{
+      "slide_number": 1,
+      "title": "슬라이드 제목",
+      "content": ["요점1", "요점2", "요점3"],
+      "narration": "나레이션"
+    }}
+  ]
+}}
+
+순수 JSON만 반환하세요."""
+
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=2500,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        return json.loads(response.content[0].text.strip())
+
+    async def generate_reading_material(self, source_content: Dict[str, Any]) -> Dict[str, Any]:
+        """읽기 자료만 생성"""
+        source_text = source_content.get("text_content", "")[:8000]
+        source_title = source_content.get("title", "")
+
+        prompt = f"""다음 내용으로 **읽기 자료**만 생성해주세요.
+
+# 원본
+제목: {source_title}
+내용: {source_text}
+
+# 요구사항
+- 마크다운 형식
+- 1500-2000자
+- 체계적으로 구조화
+- 제목, 섹션, 설명 포함
+
+# JSON 형식
+{{
+  "title": "읽기 자료 제목",
+  "content": "# 제목\\n\\n## 섹션1\\n내용...\\n\\n## 섹션2\\n내용...",
+  "estimated_reading_time": 10
+}}
+
+순수 JSON만 반환하세요."""
+
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=3000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        return json.loads(response.content[0].text.strip())
+
+    async def generate_quizzes(self, source_content: Dict[str, Any]) -> Dict[str, Any]:
+        """퀴즈만 생성"""
+        source_text = source_content.get("text_content", "")[:8000]
+
+        prompt = f"""다음 내용으로 **퀴즈**만 생성해주세요.
+
+# 원본 내용
+{source_text}
+
+# 요구사항
+- 4지선다형 5문제
+- 단답형 3문제
+- 서술형 1문제
+
+# JSON 형식
+{{
+  "multiple_choice": [
+    {{
+      "question": "문제",
+      "options": ["선택1", "선택2", "선택3", "선택4"],
+      "correct_answer": 0,
+      "explanation": "해설",
+      "difficulty": "easy"
+    }}
+  ],
+  "short_answer": [
+    {{
+      "question": "문제",
+      "correct_answers": ["정답1", "정답2"],
+      "explanation": "해설",
+      "case_sensitive": false
+    }}
+  ],
+  "essay": [
+    {{
+      "question": "문제",
+      "suggested_answer": "예시 답안",
+      "grading_criteria": ["기준1", "기준2"],
+      "min_words": 100
+    }}
+  ]
+}}
+
+순수 JSON만 반환하세요."""
+
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=3000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        return json.loads(response.content[0].text.strip())
+
+    async def generate_deep_questions(self, source_content: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """심화 질문만 생성"""
+        source_text = source_content.get("text_content", "")[:8000]
+
+        prompt = f"""다음 내용으로 **심화 사고 질문** 2개만 생성해주세요.
+
+# 원본 내용
+{source_text}
+
+# 요구사항
+- 비판적 사고를 요구하는 질문
+- 정답이 정해지지 않은 열린 질문
+
+# JSON 형식
+[
+  {{
+    "question": "질문 내용",
+    "context": "질문의 맥락",
+    "hints": ["힌트1", "힌트2"]
+  }}
+]
+
+순수 JSON만 반환하세요 (배열 형태)."""
+
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=1000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        return json.loads(response.content[0].text.strip())

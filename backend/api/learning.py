@@ -29,6 +29,132 @@ chatbot_service = ChatbotService()
 # 생성 상태 추적
 generation_status = {}
 
+# 단계별 생성 세션 저장소
+generation_sessions = {}
+
+
+@router.post("/start")
+async def start_generation(request: ContentGenerationRequest):
+    """
+    학습 콘텐츠 생성 시작 - 소스만 파싱하고 세션 생성
+    """
+    try:
+        import uuid
+        session_id = str(uuid.uuid4())
+
+        logger.info(f"새 생성 세션 시작: {session_id}")
+
+        # 소스 파싱
+        if request.sources:
+            parsed_content = await source_parser.parse_multiple([
+                {"type": s.type.value, "data": s.data} for s in request.sources
+            ])
+        else:
+            parsed_content = await source_parser.parse(
+                source_type=request.source_type,
+                source_data=request.source_data
+            )
+
+        # 세션 저장
+        generation_sessions[session_id] = {
+            "session_id": session_id,
+            "source_content": parsed_content,
+            "title": request.title or parsed_content.get("title", "학습 자료"),
+            "generated_content": {},
+            "current_step": None,
+            "steps_completed": []
+        }
+
+        return {
+            "session_id": session_id,
+            "status": "ready",
+            "title": generation_sessions[session_id]["title"],
+            "source_length": len(parsed_content.get("text_content", ""))
+        }
+
+    except Exception as e:
+        logger.error(f"세션 시작 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/generate-step/{session_id}")
+async def generate_step(session_id: str, step: str):
+    """
+    특정 단계의 콘텐츠 생성
+
+    step 옵션:
+    - podcast: 팟캐스트
+    - video_lecture: 강의 슬라이드
+    - reading_material: 읽기 자료
+    - quizzes: 퀴즈 (4지선다, 단답형, 서술형)
+    - deep_questions: 심화 질문
+    """
+    try:
+        if session_id not in generation_sessions:
+            raise HTTPException(status_code=404, detail="세션을 찾을 수 없습니다")
+
+        session = generation_sessions[session_id]
+        logger.info(f"단계 생성 요청: {session_id} - {step}")
+
+        # 이미 생성된 경우 바로 반환
+        if step in session["generated_content"]:
+            return {
+                "session_id": session_id,
+                "step": step,
+                "status": "completed",
+                "data": session["generated_content"][step]
+            }
+
+        # 단계별 생성
+        session["current_step"] = step
+
+        if step == "podcast":
+            data = await content_generator.generate_podcast(session["source_content"])
+        elif step == "video_lecture":
+            data = await content_generator.generate_video_lecture(session["source_content"])
+        elif step == "reading_material":
+            data = await content_generator.generate_reading_material(session["source_content"])
+        elif step == "quizzes":
+            data = await content_generator.generate_quizzes(session["source_content"])
+        elif step == "deep_questions":
+            data = await content_generator.generate_deep_questions(session["source_content"])
+        else:
+            raise HTTPException(status_code=400, detail=f"알 수 없는 단계: {step}")
+
+        # 생성된 콘텐츠 저장
+        session["generated_content"][step] = data
+        session["steps_completed"].append(step)
+
+        return {
+            "session_id": session_id,
+            "step": step,
+            "status": "completed",
+            "data": data
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"단계 생성 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/session/{session_id}")
+async def get_session(session_id: str):
+    """세션 상태 조회"""
+    if session_id not in generation_sessions:
+        raise HTTPException(status_code=404, detail="세션을 찾을 수 없습니다")
+
+    session = generation_sessions[session_id]
+    return {
+        "session_id": session_id,
+        "title": session["title"],
+        "current_step": session["current_step"],
+        "steps_completed": session["steps_completed"],
+        "available_steps": ["podcast", "video_lecture", "reading_material", "quizzes", "deep_questions"]
+    }
+
+
 
 @router.post("/generate", response_model=ContentGenerationStatus)
 async def generate_learning_content(
