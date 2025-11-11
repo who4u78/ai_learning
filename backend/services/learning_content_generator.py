@@ -40,8 +40,8 @@ class LearningContentGenerator:
             raise ValueError("ANTHROPIC_API_KEY가 설정되지 않았습니다")
 
         self.client = anthropic.Anthropic(api_key=api_key)
-        # 비용 최적화: Claude 3.5 Sonnet 사용
-        self.model = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20240620")
+        # Claude 3 Opus 사용 (가장 안정적이고 호환성 좋음)
+        self.model = os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229")
         self.content_dir = os.getenv("CONTENT_DIR", "../data/content")
 
         os.makedirs(self.content_dir, exist_ok=True)
