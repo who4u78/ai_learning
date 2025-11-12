@@ -76,73 +76,34 @@ export default function MultiSourceInput({ onComplete }: Props) {
     if (sources.length === 0) return
 
     setLoading(true)
-    setProgress(0)
-    setMessage('생성 시작...')
+    setProgress(50)
+    setMessage('소스 분석 중...')
 
     try {
-      let contentId: string
+      let request
 
-      // 파일이 있는지 확인
-      const hasFiles = sources.some(s => s.type === 'file')
-
-      if (hasFiles) {
-        // 파일 업로드 API 사용
-        const formData = new FormData()
-        sources.forEach(source => {
-          if (source.file) {
-            formData.append('files', source.file)
-          }
-        })
-
-        const response = await axios.post(
-          'http://localhost:8000/api/learning/upload',
-          formData,
-          {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          }
-        )
-
-        contentId = response.data.content_id
-      } else {
-        // 일반 API 사용
-        let request
-
-        if (sources.length === 1) {
-          // 단일 소스
-          request = {
-            source_type: sources[0].type,
-            source_data: sources[0].data
-          }
-        } else {
-          // 다중 소스
-          request = {
-            sources: sources.map(s => ({
-              type: s.type,
-              data: s.data
-            }))
-          }
+      if (sources.length === 1) {
+        // 단일 소스
+        request = {
+          source_type: sources[0].type,
+          source_data: sources[0].data
         }
-
-        const response = await learningApi.generateContent(request)
-        contentId = response.content_id
+      } else {
+        // 다중 소스
+        request = {
+          sources: sources.map(s => ({
+            type: s.type,
+            data: s.data
+          }))
+        }
       }
 
-      // 진행 상태 폴링
-      const interval = setInterval(async () => {
-        const status = await learningApi.getStatus(contentId)
-        setProgress(status.progress)
-        setMessage(status.current_task || '')
+      setProgress(100)
+      setMessage('완료!')
+      setLoading(false)
 
-        if (status.status === 'completed') {
-          clearInterval(interval)
-          setLoading(false)
-          onComplete(contentId)
-        } else if (status.status === 'failed') {
-          clearInterval(interval)
-          setLoading(false)
-          setMessage('생성 실패: ' + (status.error || '알 수 없는 오류'))
-        }
-      }, 3000)
+      // 부모 컴포넌트로 request 전달
+      onComplete(request)
     } catch (error: any) {
       setLoading(false)
       setMessage('오류: ' + error.message)
